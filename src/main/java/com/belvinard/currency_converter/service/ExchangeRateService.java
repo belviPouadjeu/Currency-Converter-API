@@ -37,18 +37,23 @@ public class ExchangeRateService {
 
                     return Mono.just(response.getConversionRates());
                 })
-                .onErrorResume(error -> Mono.empty());
+                .doOnError(error -> System.err.println("Erreur lors de l'appel API : " + error.getMessage()))
+                .onErrorResume(error -> Mono.error(new RuntimeException("Impossible de récupérer les taux de change. Vérifiez votre connexion.")));
     }
+
 
     // ✅ Nouvelle méthode pour convertir les devises
     public Mono<Double> convert(String fromCurrency, String toCurrency, double amount) {
         return getExchangeRates(fromCurrency)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Devise source invalide : " + fromCurrency))) // ✅ Vérifier la devise source
                 .map(rates -> {
                     if (!rates.containsKey(toCurrency)) {
                         throw new IllegalArgumentException("Devise cible invalide : " + toCurrency);
                     }
                     double rate = rates.get(toCurrency);
                     return amount * rate;
-                });
+                })
+                .doOnError(error -> System.err.println("Erreur conversion : " + error.getMessage()));
     }
+
 }

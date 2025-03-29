@@ -21,6 +21,8 @@ public class ExchangeRateController {
         return exchangeRateService.convert(from.toUpperCase(), to.toUpperCase(), amount)
                 .map(convertedAmount -> String.format("%.2f %s = %.2f %s",
                         amount, from.toUpperCase(), convertedAmount, to.toUpperCase()))
-                .onErrorResume(e -> Mono.just("Erreur : " + e.getMessage()));
+                .onErrorResume(IllegalArgumentException.class, e -> Mono.just("Erreur : " + e.getMessage())) // ✅ Devise invalide
+                .onErrorResume(RuntimeException.class, e -> Mono.just("Erreur technique : " + e.getMessage())); // ✅ Erreur API ou connexion
     }
+
 }
